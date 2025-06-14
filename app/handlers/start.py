@@ -48,6 +48,7 @@ async def back_to_start(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_after_application_keyboard(),
             parse_mode="HTML"
         )
+        await callback.answer()
         return
     
     await callback.message.edit_text(
@@ -85,9 +86,21 @@ async def show_reviews(callback: CallbackQuery):
     
     text += "<i>Это лишь малая часть отзывов. Присоединяйтесь к успешным выпускникам!</i>"
     
-    await callback.message.edit_text(
-        text,
-        reply_markup=get_back_to_start_keyboard(),
-        parse_mode="HTML"
-    )
+    # Проверяем, есть ли заявка у пользователя
+    has_application = await user_has_application(callback.from_user.id)
+    
+    if has_application:
+        # Для тех, кто уже записан - показываем другую клавиатуру
+        await callback.message.edit_text(
+            text,
+            reply_markup=get_after_application_keyboard(),
+            parse_mode="HTML"
+        )
+    else:
+        await callback.message.edit_text(
+            text,
+            reply_markup=get_back_to_start_keyboard(),
+            parse_mode="HTML"
+        )
+    
     await callback.answer()
