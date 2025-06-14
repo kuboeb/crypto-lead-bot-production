@@ -7,42 +7,119 @@ from app.config import CONTACT_TIMES
 
 
 def get_start_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура для начала"""
+    """Главная клавиатура"""
     builder = InlineKeyboardBuilder()
+    
+    # Главная кнопка
     builder.row(
         InlineKeyboardButton(
-            text="📝 Записаться на курс",
+            text="🚀 Записаться на курс",
             callback_data="start_application"
         )
     )
+    
+    # Информационные кнопки
     builder.row(
         InlineKeyboardButton(
-            text="📚 Подробнее о курсе",
-            callback_data="course_info"
+            text="📚 Программа курса",
+            callback_data="show_program"
         ),
         InlineKeyboardButton(
             text="💬 Отзывы",
             callback_data="show_reviews"
         )
     )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="❓ Частые вопросы",
+            callback_data="show_faq"
+        ),
+        InlineKeyboardButton(
+            text="💎 Почему крипто?",
+            callback_data="show_why_crypto"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="🛡 Гарантии",
+            callback_data="show_guarantees"
+        ),
+        InlineKeyboardButton(
+            text="👥 О нас",
+            callback_data="show_about"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="🌟 Истории успеха",
+            callback_data="show_success_stories"
+        )
+    )
+    
     return builder.as_markup()
 
 
 def get_after_application_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура после подачи заявки"""
     builder = InlineKeyboardBuilder()
+    
     builder.row(
         InlineKeyboardButton(
-            text="📚 Подробнее о курсе",
-            callback_data="course_info"
-        )
-    )
-    builder.row(
+            text="📚 Программа курса",
+            callback_data="show_program"
+        ),
         InlineKeyboardButton(
-            text="💬 Отзывы выпускников",
+            text="💬 Отзывы",
             callback_data="show_reviews"
         )
     )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="❓ Частые вопросы",
+            callback_data="show_faq"
+        ),
+        InlineKeyboardButton(
+            text="🌟 Истории успеха",
+            callback_data="show_success_stories"
+        )
+    )
+    
+    return builder.as_markup()
+
+
+def get_info_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура для информационных разделов с дополнительными опциями"""
+    builder = InlineKeyboardBuilder()
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="📝 Записаться на курс",
+            callback_data="start_application"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="💬 Почитать отзывы",
+            callback_data="show_reviews"
+        ),
+        InlineKeyboardButton(
+            text="❓ FAQ",
+            callback_data="show_faq"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="↩️ В главное меню",
+            callback_data="back_to_start"
+        )
+    )
+    
     return builder.as_markup()
 
 
@@ -93,34 +170,55 @@ def get_cancel_keyboard() -> ReplyKeyboardMarkup:
 def get_back_to_start_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура возврата к началу"""
     builder = InlineKeyboardBuilder()
+    
     builder.row(
         InlineKeyboardButton(
-            text="↩️ Вернуться в начало",
+            text="📝 Записаться на курс",
+            callback_data="start_application"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="↩️ В главное меню",
             callback_data="back_to_start"
         )
     )
+    
     return builder.as_markup()
 
 
 def get_success_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура после успешной заявки"""
     builder = InlineKeyboardBuilder()
+    
     builder.row(
         InlineKeyboardButton(
-            text="📚 Подробнее о курсе",
-            callback_data="course_info"
-        )
-    )
-    builder.row(
+            text="📚 Программа курса",
+            callback_data="show_program"
+        ),
         InlineKeyboardButton(
-            text="💬 Отзывы выпускников",
+            text="💬 Отзывы",
             callback_data="show_reviews"
         )
     )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="❓ Частые вопросы",
+            callback_data="show_faq"
+        ),
+        InlineKeyboardButton(
+            text="🌟 Истории успеха",
+            callback_data="show_success_stories"
+        )
+    )
+    
     builder.row(
         InlineKeyboardButton(
             text="🏠 В главное меню",
             callback_data="back_to_start"
         )
     )
+    
     return builder.as_markup()
