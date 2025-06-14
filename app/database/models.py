@@ -95,3 +95,66 @@ async def get_session() -> AsyncSession:
     """Получить сессию базы данных"""
     async with async_session() as session:
         yield session
+
+
+class Buyer(Base):
+    """Модель байера (рекламщика)"""
+    __tablename__ = 'buyers'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    telegram_username = Column(String(100), nullable=True)
+    telegram_id = Column(BigInteger, nullable=True)
+    source_type = Column(String(50), nullable=False)  # facebook, google, push и т.д.
+    buyer_code = Column(String(50), unique=True, nullable=False)  # Уникальный код байера
+    
+    # Настройки для разных платформ
+    fb_pixel_id = Column(String(100), nullable=True)
+    fb_access_token = Column(Text, nullable=True)
+    google_conversion_id = Column(String(100), nullable=True)
+    google_conversion_label = Column(String(100), nullable=True)
+    postback_url = Column(Text, nullable=True)
+    
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Статистика
+    total_leads = Column(Integer, default=0)
+    total_applications = Column(Integer, default=0)
+    
+    def __repr__(self):
+        return f"<Buyer({self.name}, {self.source_type})>"
+
+
+class PostbackLog(Base):
+    """Лог отправки postback"""
+    __tablename__ = 'postback_logs'
+    
+    id = Column(Integer, primary_key=True)
+    buyer_id = Column(Integer, ForeignKey('buyers.id'))
+    application_id = Column(Integer, ForeignKey('applications.id'))
+    status = Column(String(20))  # success, failed, retry
+    response_code = Column(Integer, nullable=True)
+    response_text = Column(Text, nullable=True)
+    attempt = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<PostbackLog({self.buyer_id}, {self.status})>"
+
+
+class AdminUser(Base):
+    """Модель админов"""
+    __tablename__ = 'admin_users'
+    
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, unique=True, nullable=False)
+    username = Column(String(100), nullable=True)
+    full_name = Column(String(200), nullable=True)
+    role = Column(String(50), default='viewer')  # owner, admin, manager, viewer
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_action_at = Column(DateTime, nullable=True)
+    
+    def __repr__(self):
+        return f"<AdminUser({self.username}, {self.role})>"
