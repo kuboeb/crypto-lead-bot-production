@@ -2,7 +2,7 @@
 Модели базы данных
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -24,6 +24,7 @@ class Application(Base):
     contact_time = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_processed = Column(Boolean, default=False)  # Обработана ли заявка
+    referred_by = Column(BigInteger, nullable=True)  # Кто пригласил
     
     def __repr__(self):
         return f"<Application({self.name}, {self.phone})>"
@@ -59,6 +60,20 @@ class Review(Base):
     
     def __repr__(self):
         return f"<Review({self.name}, {self.country})>"
+
+
+class Referral(Base):
+    """Модель реферальной системы"""
+    __tablename__ = 'referrals'
+    
+    id = Column(Integer, primary_key=True)
+    referrer_id = Column(BigInteger, nullable=False)  # Кто пригласил
+    referred_id = Column(BigInteger, nullable=False)  # Кого пригласили
+    created_at = Column(DateTime, default=datetime.utcnow)
+    bonus_paid = Column(Boolean, default=False)  # Выплачен ли бонус
+    
+    def __repr__(self):
+        return f"<Referral({self.referrer_id} -> {self.referred_id})>"
 
 
 # Создаём движок базы данных
