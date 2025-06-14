@@ -11,8 +11,7 @@ from .referral import router as referral_router
 
 def register_all_handlers(dp: Dispatcher):
     """Регистрирует все обработчики"""
-    # Важно: referral должен быть первым для обработки deep links
-    dp.include_router(referral_router)
     dp.include_router(start_router)
     dp.include_router(application_router)
     dp.include_router(info_router)
+    dp.include_router(referral_router)

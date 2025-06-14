@@ -5,6 +5,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
 
 from app.config import MESSAGES
 from app.database.queries import (
@@ -86,41 +87,23 @@ async def show_referral_program(callback: CallbackQuery):
     await callback.answer()
 
 
-@router.message(CommandStart(deep_link=True))
-async def process_referral_start(message: Message):
-    """Обработка перехода по реферальной ссылке"""
-    # Получаем аргумент из команды /start
-    args = message.text.split()[1] if len(message.text.split()) > 1 else None
-    
-    if args and args.startswith("ref_"):
-        try:
-            referrer_id = int(args.split("_")[1])
+async def process_referral_link(message: Message, state: FSMContext, referrer_id: int):
+    """Обработка реферальной ссылки"""
+    try:
+        # Проверяем, что это не сам пользователь
+        if referrer_id == message.from_user.id:
+            return
+        
+        # Проверяем, есть ли у реферера заявка
+        referrer_app = await get_application_by_user_id(referrer_id)
+        if referrer_app:
+            # Отправляем специальное приветствие
+            welcome_text = MESSAGES['referred_welcome'].format(
+                referrer_name=referrer_app.name
+            )
+            await message.answer(welcome_text, parse_mode="HTML")
             
-            # Проверяем, что это не сам пользователь
-            if referrer_id == message.from_user.id:
-                return
-            
-            # Проверяем, есть ли у реферера заявка
-            referrer_app = await get_application_by_user_id(referrer_id)
-            if referrer_app:
-                # Отправляем специальное приветствие
-                welcome_text = MESSAGES['referred_welcome'].format(
-                    referrer_name=referrer_app.name
-                )
-                await message.answer(welcome_text, parse_mode="HTML")
-                
-                # Сохраняем информацию о реферале в состоянии
-                # Она будет использована при создании заявки
-                from aiogram.fsm.context import FSMContext
-                state = FSMContext(
-                    bot=message.bot,
-                    storage=message.bot.storage,
-                    key=message.bot.storage.get_key(
-                        bot_id=message.bot.id,
-                        chat_id=message.chat.id,
-                        user_id=message.from_user.id
-                    )
-                )
-                await state.update_data(referred_by=referrer_id)
-        except (ValueError, IndexError):
-            pass
+            # Сохраняем информацию о реферале в состоянии
+            await state.update_data(referred_by=referrer_id)
+    except Exception as e:
+        print(f"Ошибка обработки реферальной ссылки: {e}")

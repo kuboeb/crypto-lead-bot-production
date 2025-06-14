@@ -9,6 +9,7 @@ from aiogram.fsm.context import FSMContext
 from app.config import MESSAGES
 from app.keyboards.user import get_start_keyboard, get_back_to_start_keyboard, get_after_application_keyboard
 from app.database.queries import user_has_application, get_random_reviews
+from app.handlers.referral import process_referral_link
 
 router = Router(name="start")
 
@@ -18,6 +19,15 @@ async def cmd_start(message: Message, state: FSMContext):
     """Обработка команды /start"""
     # Сбрасываем состояние
     await state.clear()
+    
+    # Проверяем, есть ли реферальная ссылка
+    args = message.text.split()
+    if len(args) > 1 and args[1].startswith("ref_"):
+        try:
+            referrer_id = int(args[1].split("_")[1])
+            await process_referral_link(message, state, referrer_id)
+        except (ValueError, IndexError):
+            pass
     
     # Проверяем, есть ли уже заявка от пользователя
     if await user_has_application(message.from_user.id):
