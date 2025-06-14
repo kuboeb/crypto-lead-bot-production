@@ -257,13 +257,17 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
     
     try:
         # Создаём заявку в БД
+        # Получаем информацию о реферере из состояния
+        referred_by = data.get('referred_by', None)
+        
         application = await create_application(
             user_id=callback.from_user.id,
             username=callback.from_user.username,
             name=data['name'],
             country=data['country'],
             phone=data['phone'],
-            contact_time=contact_time
+            contact_time=contact_time,
+            referred_by=referred_by
         )
         
         # Отправляем подтверждение пользователю с клавиатурой
