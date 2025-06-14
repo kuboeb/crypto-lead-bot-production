@@ -1,11 +1,12 @@
 """
 Запросы к базе данных
 """
-from sqlalchemy import select
+import json
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Application, async_session
-from datetime import datetime
-from typing import Optional
+from app.database.models import Application, UnfinishedApplication, Review, async_session
+from datetime import datetime, timedelta
+from typing import Optional, List
 
 
 async def create_application(
@@ -28,6 +29,15 @@ async def create_application(
             created_at=datetime.utcnow()
         )
         session.add(application)
+        
+        # Удаляем незавершенную заявку, если была
+        unfinished = await session.execute(
+            select(UnfinishedApplication).where(UnfinishedApplication.user_id == user_id)
+        )
+        unfinished_app = unfinished.scalar_one_or_none()
+        if unfinished_app:
+            await session.delete(unfinished_app)
+        
         await session.commit()
         await session.refresh(application)
         return application
@@ -48,6 +58,116 @@ async def user_has_application(user_id: int) -> bool:
     return application is not None
 
 
+async def save_unfinished_application(
+    user_id: int,
+    username: Optional[str],
+    current_step: str,
+    data: dict
+) -> UnfinishedApplication:
+    """Сохранить незавершенную заявку"""
+    async with async_session() as session:
+        # Проверяем, есть ли уже незавершенная заявка
+        result = await session.execute(
+            select(UnfinishedApplication).where(UnfinishedApplication.user_id == user_id)
+        )
+        unfinished = result.scalar_one_or_none()
+        
+        if unfinished:
+            # Обновляем существующую
+            unfinished.current_step = current_step
+            unfinished.data = json.dumps(data, ensure_ascii=False)
+        else:
+            # Создаем новую
+            unfinished = UnfinishedApplication(
+                user_id=user_id,
+                username=username,
+                current_step=current_step,
+                data=json.dumps(data, ensure_ascii=False)
+            )
+            session.add(unfinished)
+        
+        await session.commit()
+        return unfinished
+
+
+async def get_unfinished_applications_for_reminder() -> List[UnfinishedApplication]:
+    """Получить незавершенные заявки для напоминания"""
+    async with async_session() as session:
+        # Заявки старше 30 минут, которым не отправлено напоминание
+        thirty_minutes_ago = datetime.utcnow() - timedelta(minutes=30)
+        
+        result = await session.execute(
+            select(UnfinishedApplication).where(
+                and_(
+                    UnfinishedApplication.created_at <= thirty_minutes_ago,
+                    UnfinishedApplication.reminder_sent == False
+                )
+            )
+        )
+        return result.scalars().all()
+
+
+async def mark_reminder_sent(user_id: int):
+    """Отметить, что напоминание отправлено"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(UnfinishedApplication).where(UnfinishedApplication.user_id == user_id)
+        )
+        unfinished = result.scalar_one_or_none()
+        if unfinished:
+            unfinished.reminder_sent = True
+            await session.commit()
+
+
+async def get_recent_applications_count(hours: int = 1) -> int:
+    """Получить количество заявок за последние N часов"""
+    async with async_session() as session:
+        time_ago = datetime.utcnow() - timedelta(hours=hours)
+        result = await session.execute(
+            select(func.count(Application.id)).where(
+                Application.created_at >= time_ago
+            )
+        )
+        return result.scalar() or 0
+
+
+async def get_recent_applications(limit: int = 5) -> List[Application]:
+    """Получить последние заявки"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Application)
+            .order_by(Application.created_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+
+async def get_random_reviews(limit: int = 3) -> List[Review]:
+    """Получить случайные отзывы"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Review)
+            .where(Review.is_active == True)
+            .order_by(func.random())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+
+async def add_review(name: str, country: str, text: str, profit: Optional[str] = None) -> Review:
+    """Добавить отзыв"""
+    async with async_session() as session:
+        review = Review(
+            name=name,
+            country=country,
+            text=text,
+            profit=profit
+        )
+        session.add(review)
+        await session.commit()
+        return review
+
+
 async def mark_application_processed(user_id: int) -> bool:
     """Отметить заявку как обработанную"""
     async with async_session() as session:
@@ -62,7 +182,7 @@ async def mark_application_processed(user_id: int) -> bool:
         return False
 
 
-async def get_all_applications(limit: int = 100) -> list[Application]:
+async def get_all_applications(limit: int = 100) -> List[Application]:
     """Получить все заявки"""
     async with async_session() as session:
         result = await session.execute(
@@ -73,7 +193,7 @@ async def get_all_applications(limit: int = 100) -> list[Application]:
         return result.scalars().all()
 
 
-async def get_unprocessed_applications() -> list[Application]:
+async def get_unprocessed_applications() -> List[Application]:
     """Получить необработанные заявки"""
     async with async_session() as session:
         result = await session.execute(
