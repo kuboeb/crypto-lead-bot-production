@@ -15,7 +15,7 @@ from app.keyboards.user import (
     get_phone_keyboard, 
     get_contact_time_keyboard,
     get_cancel_keyboard,
-    get_success_keyboard
+    get_success_keyboard, get_after_application_keyboard
 )
 from app.database.queries import (
     create_application, 
@@ -263,7 +263,7 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
         await callback.message.edit_text(
             MESSAGES['success'],
             parse_mode="HTML",
-            reply_markup=get_success_keyboard()
+            reply_markup=get_success_keyboard, get_after_application_keyboard()
         )
         
         # Отправляем уведомление админу
