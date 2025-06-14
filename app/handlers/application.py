@@ -350,7 +350,7 @@ async def continue_application(callback: CallbackQuery, state: FSMContext):
         "Используйте кнопку ниже для возврата в меню:",
         reply_markup=get_application_navigation_keyboard()
     )
-        await state.set_state(ApplicationStates.waiting_for_name)
+        await state.set_state(ApplicationStates.waiting_for_name))
         
     elif unfinished.current_step == "country":
         progress = get_progress_bar(2)
