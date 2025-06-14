@@ -285,6 +285,78 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
         print(f"Ошибка создания заявки: {e}")
         await callback.message.edit_text(
             MESSAGES['error'],
+@router.callback_query(F.data == "continue_application")
+async def continue_application(callback: CallbackQuery, state: FSMContext):
+    """Продолжить заполнение заявки после напоминания"""
+    # Получаем незавершенную заявку из БД
+    from app.database.models import async_session, UnfinishedApplication
+    from sqlalchemy import select
+    
+    async with async_session() as session:
+        result = await session.execute(
+            select(UnfinishedApplication).where(
+                UnfinishedApplication.user_id == callback.from_user.id
+            )
+        )
+        unfinished = result.scalar_one_or_none()
+    
+    if not unfinished:
+        await callback.message.edit_text(
+            "Начните заново, нажав /start",
+            parse_mode="HTML"
+        )
+        await callback.answer()
+        return
+    
+    # Восстанавливаем данные
+    data = json.loads(unfinished.data) if unfinished.data else {}
+    await state.update_data(**data)
+    
+    # Определяем, на каком шаге остановился пользователь
+    if unfinished.current_step == "name":
+        progress = get_progress_bar(1)
+        text = f"<b>Шаг 1 из 4</b> {progress}\n\n"
+        text += MESSAGES['ask_name']
+        await callback.message.edit_text(text, parse_mode="HTML")
+        await state.set_state(ApplicationStates.waiting_for_name)
+        
+    elif unfinished.current_step == "country":
+        progress = get_progress_bar(2)
+        text = f"<b>Шаг 2 из 4</b> {progress}\n\n"
+        text += f"С возвращением, {data.get('name', '')}! "
+        text += MESSAGES['ask_country']
+        await callback.message.edit_text(text, parse_mode="HTML")
+        await state.set_state(ApplicationStates.waiting_for_country)
+        
+    elif unfinished.current_step == "phone":
+        progress = get_progress_bar(3)
+        text = f"<b>Шаг 3 из 4</b> {progress}\n\n"
+        text += f"Продолжаем, {data.get('name', '')}! "
+        text += MESSAGES['ask_phone']
+        await callback.message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=get_phone_keyboard()
+        )
+        await callback.message.delete()
+        await state.set_state(ApplicationStates.waiting_for_phone)
+        
+    elif unfinished.current_step == "contact_time":
+        progress = get_progress_bar(4)
+        text = f"<b>Последний шаг!</b> {progress}\n\n"
+        text += f"Почти готово, {data.get('name', '')}! "
+        text += MESSAGES['ask_time']
+        await callback.message.answer(
+            text,
+            parse_mode="HTML",
+            reply_markup=get_contact_time_keyboard()
+        )
+        await callback.message.delete()
+        await state.set_state(ApplicationStates.waiting_for_contact_time)
+    
+    await callback.answer("Продолжаем с того места, где остановились!")
+
+
             parse_mode="HTML"
         )
     
