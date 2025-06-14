@@ -1,0 +1,126 @@
+"""
+Обработчик реферальной системы
+"""
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.filters import CommandStart
+
+from app.config import MESSAGES
+from app.database.queries import (
+    user_has_application, 
+    get_user_referrals_count,
+    save_referral,
+    get_application_by_user_id
+)
+
+router = Router(name="referral")
+
+
+def generate_referral_link(user_id: int, bot_username: str) -> str:
+    """Генерирует реферальную ссылку"""
+    return f"https://t.me/{bot_username}?start=ref_{user_id}"
+
+
+def get_share_keyboard(referral_link: str, share_text: str) -> InlineKeyboardMarkup:
+    """Клавиатура для шеринга"""
+    builder = InlineKeyboardBuilder()
+    
+    # Кнопка поделиться в Telegram
+    builder.row(
+        InlineKeyboardButton(
+            text="📤 Поделиться в Telegram",
+            url=f"https://t.me/share/url?url={referral_link}&text={share_text}"
+        )
+    )
+    
+    # Кнопка поделиться в WhatsApp
+    builder.row(
+        InlineKeyboardButton(
+            text="💚 Поделиться в WhatsApp",
+            url=f"https://wa.me/?text={share_text} {referral_link}"
+        )
+    )
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="↩️ Назад",
+            callback_data="back_to_start"
+        )
+    )
+    
+    return builder.as_markup()
+
+
+@router.callback_query(F.data == "show_referral_program")
+async def show_referral_program(callback: CallbackQuery):
+    """Показать реферальную программу"""
+    # Проверяем, есть ли у пользователя заявка
+    if not await user_has_application(callback.from_user.id):
+        await callback.answer("Сначала нужно записаться на курс!", show_alert=True)
+        return
+    
+    # Генерируем реферальную ссылку
+    bot_username = callback.bot.username
+    referral_link = generate_referral_link(callback.from_user.id, bot_username)
+    
+    # Получаем количество приглашенных
+    referrals_count = await get_user_referrals_count(callback.from_user.id)
+    
+    # Формируем текст
+    text = MESSAGES['referral_program'].format(referral_link=referral_link)
+    if referrals_count > 0:
+        text += f"\n\n👥 <b>Вы уже пригласили: {referrals_count} чел.</b>"
+        text += f"\n💰 <b>Потенциальный бонус: {referrals_count * 50}€</b>"
+    
+    # Текст для шеринга (URL encoded)
+    share_text = MESSAGES['referral_share_message'].format(referral_link=referral_link)
+    import urllib.parse
+    share_text_encoded = urllib.parse.quote(share_text)
+    
+    await callback.message.edit_text(
+        text,
+        reply_markup=get_share_keyboard(referral_link, share_text_encoded),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.message(CommandStart(deep_link=True))
+async def process_referral_start(message: Message):
+    """Обработка перехода по реферальной ссылке"""
+    # Получаем аргумент из команды /start
+    args = message.text.split()[1] if len(message.text.split()) > 1 else None
+    
+    if args and args.startswith("ref_"):
+        try:
+            referrer_id = int(args.split("_")[1])
+            
+            # Проверяем, что это не сам пользователь
+            if referrer_id == message.from_user.id:
+                return
+            
+            # Проверяем, есть ли у реферера заявка
+            referrer_app = await get_application_by_user_id(referrer_id)
+            if referrer_app:
+                # Отправляем специальное приветствие
+                welcome_text = MESSAGES['referred_welcome'].format(
+                    referrer_name=referrer_app.name
+                )
+                await message.answer(welcome_text, parse_mode="HTML")
+                
+                # Сохраняем информацию о реферале в состоянии
+                # Она будет использована при создании заявки
+                from aiogram.fsm.context import FSMContext
+                state = FSMContext(
+                    bot=message.bot,
+                    storage=message.bot.storage,
+                    key=message.bot.storage.get_key(
+                        bot_id=message.bot.id,
+                        chat_id=message.chat.id,
+                        user_id=message.from_user.id
+                    )
+                )
+                await state.update_data(referred_by=referrer_id)
+        except (ValueError, IndexError):
+            pass
