@@ -7,7 +7,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from app.config import MESSAGES
-from app.keyboards.user import get_start_keyboard, get_back_to_start_keyboard
+from app.keyboards.user import get_start_keyboard, get_back_to_start_keyboard, get_after_application_keyboard
 from app.database.queries import user_has_application
 
 router = Router(name="start")
@@ -23,7 +23,8 @@ async def cmd_start(message: Message, state: FSMContext):
     if await user_has_application(message.from_user.id):
         await message.answer(
             MESSAGES['already_applied'],
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=get_after_application_keyboard(),
+            parse_mode="HTML"
         )
         return
     
@@ -44,6 +45,7 @@ async def back_to_start(callback: CallbackQuery, state: FSMContext):
     if await user_has_application(callback.from_user.id):
         await callback.message.edit_text(
             MESSAGES['already_applied'],
+            reply_markup=get_after_application_keyboard(),
             parse_mode="HTML"
         )
         return
