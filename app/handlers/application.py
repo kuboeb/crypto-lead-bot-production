@@ -17,6 +17,7 @@ from app.keyboards.user import (
     get_cancel_keyboard,
     get_success_keyboard,
     get_after_application_keyboard
+    get_after_application_keyboard
 )
 from app.database.queries import (
     create_application, 
