@@ -285,6 +285,12 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
         print(f"Ошибка создания заявки: {e}")
         await callback.message.edit_text(
             MESSAGES['error'],
+            parse_mode="HTML"
+        )
+    
+    await callback.answer()
+
+
 @router.callback_query(F.data == "continue_application")
 async def continue_application(callback: CallbackQuery, state: FSMContext):
     """Продолжить заполнение заявки после напоминания"""
@@ -355,12 +361,6 @@ async def continue_application(callback: CallbackQuery, state: FSMContext):
         await state.set_state(ApplicationStates.waiting_for_contact_time)
     
     await callback.answer("Продолжаем с того места, где остановились!")
-
-
-            parse_mode="HTML"
-        )
-    
-    await callback.answer()
 
 
 @router.message(F.text == "❌ Отмена")
