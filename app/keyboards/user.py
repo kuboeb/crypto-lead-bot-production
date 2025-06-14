@@ -222,3 +222,17 @@ def get_success_keyboard() -> InlineKeyboardMarkup:
     )
     
     return builder.as_markup()
+
+
+def get_application_navigation_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура с кнопкой Назад для процесса заявки"""
+    builder = InlineKeyboardBuilder()
+    
+    builder.row(
+        InlineKeyboardButton(
+            text="↩️ Назад",
+            callback_data="back_to_start"
+        )
+    )
+    
+    return builder.as_markup()
