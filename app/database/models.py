@@ -151,10 +151,14 @@ class AdminUser(Base):
     telegram_id = Column(BigInteger, unique=True, nullable=False)
     username = Column(String(100), nullable=True)
     full_name = Column(String(200), nullable=True)
-    role = Column(String(50), default='viewer')  # owner, admin, manager, viewer
+    role = Column(String(50), default='viewer')
+    password_hash = Column(String(200), nullable=True)  # owner, admin, manager, viewer
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_action_at = Column(DateTime, nullable=True)
     
     def __repr__(self):
         return f"<AdminUser({self.username}, {self.role})>"
+
+# Добавляем поле password_hash в AdminUser
+AdminUser.password_hash = Column(String(200), nullable=True)
