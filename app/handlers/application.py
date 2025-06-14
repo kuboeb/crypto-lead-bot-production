@@ -215,9 +215,16 @@ async def process_phone(message: Message, state: FSMContext):
     text += MESSAGES['ask_time']
     text += "\n\n<i>🎯 После выбора времени ваше место будет забронировано!</i>"
     
+    # ВАЖНО: Сначала убираем reply клавиатуру
     await message.answer(
         text,
         parse_mode="HTML",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    
+    # Затем отправляем inline клавиатуру
+    await message.answer(
+        "Выберите удобное время для звонка:",
         reply_markup=get_contact_time_keyboard()
     )
     
@@ -355,6 +362,10 @@ async def continue_application(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(
             text,
             parse_mode="HTML",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await callback.message.answer(
+            "Выберите удобное время:",
             reply_markup=get_contact_time_keyboard()
         )
         await callback.message.delete()
