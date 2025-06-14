@@ -66,6 +66,14 @@ def get_after_application_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура после подачи заявки"""
     builder = InlineKeyboardBuilder()
     
+    
+    # Добавляем кнопку реферальной программы
+    builder.row(
+        InlineKeyboardButton(
+            text="💰 Приведи друга - получи 50€",
+            callback_data="show_referral_program"
+        )
+    )
     builder.row(
         InlineKeyboardButton(
             text="📚 Программа курса",
