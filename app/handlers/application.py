@@ -13,7 +13,8 @@ from app.states.application import ApplicationStates
 from app.keyboards.user import (
     get_phone_keyboard, 
     get_contact_time_keyboard,
-    get_cancel_keyboard, get_success_keyboard
+    get_cancel_keyboard,
+    get_success_keyboard
 )
 from app.database.queries import create_application, user_has_application
 
@@ -27,8 +28,7 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
     if await user_has_application(callback.from_user.id):
         await callback.message.edit_text(
             MESSAGES['already_applied'],
-            parse_mode="HTML",
-            reply_markup=get_success_keyboard()
+            parse_mode="HTML"
         )
         await callback.answer("У вас уже есть заявка!")
         return
@@ -36,8 +36,7 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
     # Запрашиваем имя
     await callback.message.edit_text(
         MESSAGES['ask_name'],
-        parse_mode="HTML",
-            reply_markup=get_success_keyboard()
+        parse_mode="HTML"
     )
     await state.set_state(ApplicationStates.waiting_for_name)
     await callback.answer()
@@ -53,7 +52,7 @@ async def process_name(message: Message, state: FSMContext):
         await message.answer(
             MESSAGES['invalid_name'],
             parse_mode="HTML",
-            reply_markup=get_cancel_keyboard, get_success_keyboard()
+            reply_markup=get_cancel_keyboard()
         )
         return
     
@@ -64,7 +63,7 @@ async def process_name(message: Message, state: FSMContext):
     await message.answer(
         MESSAGES['ask_country'],
         parse_mode="HTML",
-        reply_markup=get_cancel_keyboard, get_success_keyboard()
+        reply_markup=get_cancel_keyboard()
     )
     await state.set_state(ApplicationStates.waiting_for_country)
 
@@ -79,7 +78,7 @@ async def process_country(message: Message, state: FSMContext):
         await message.answer(
             MESSAGES['invalid_country'],
             parse_mode="HTML",
-            reply_markup=get_cancel_keyboard, get_success_keyboard()
+            reply_markup=get_cancel_keyboard()
         )
         return
     
@@ -149,7 +148,7 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
             contact_time=contact_time
         )
         
-        # Отправляем подтверждение пользователю
+        # Отправляем подтверждение пользователю с клавиатурой
         await callback.message.edit_text(
             MESSAGES['success'],
             parse_mode="HTML",
@@ -182,8 +181,7 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
         print(f"Ошибка создания заявки: {e}")
         await callback.message.edit_text(
             MESSAGES['error'],
-            parse_mode="HTML",
-            reply_markup=get_success_keyboard()
+            parse_mode="HTML"
         )
     
     await callback.answer()
