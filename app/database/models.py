@@ -1,9 +1,11 @@
+from sqlalchemy import Float
 """
 Модели базы данных
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, BigInteger, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.config import DATABASE_URL
