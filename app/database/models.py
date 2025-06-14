@@ -160,5 +160,3 @@ class AdminUser(Base):
     def __repr__(self):
         return f"<AdminUser({self.username}, {self.role})>"
 
-# Добавляем поле password_hash в AdminUser
-AdminUser.password_hash = Column(String(200), nullable=True)

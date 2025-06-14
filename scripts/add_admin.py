@@ -9,6 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from app.database.models import init_db, AdminUser, async_session
 from app.config import ADMIN_ID
+from sqlalchemy import select
 
 
 async def add_admin():
@@ -17,7 +18,10 @@ async def add_admin():
     
     async with async_session() as session:
         # Проверяем, есть ли уже админ
-        existing = await session.get(AdminUser, {'telegram_id': ADMIN_ID})
+        result = await session.execute(
+            select(AdminUser).where(AdminUser.telegram_id == ADMIN_ID)
+        )
+        existing = result.scalar_one_or_none()
         
         if existing:
             print(f"✅ Админ с ID {ADMIN_ID} уже существует")
