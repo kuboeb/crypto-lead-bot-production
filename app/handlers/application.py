@@ -17,7 +17,6 @@ from app.keyboards.user import (
     get_cancel_keyboard,
     get_success_keyboard,
     get_application_navigation_keyboard,
-    get_application_navigation_keyboard,
     get_after_application_keyboard
 )
 from app.database.queries import (
@@ -343,27 +342,15 @@ async def continue_application(callback: CallbackQuery, state: FSMContext):
         progress = get_progress_bar(1)
         text = f"<b>Шаг 1 из 4</b> {progress}\n\n"
         text += MESSAGES['ask_name']
-        await callback.message.edit_text(text, parse_mode="HTML")
-    
-    # Добавляем кнопку Назад
-    await callback.message.answer(
-        "Используйте кнопку ниже для возврата в меню:",
-        reply_markup=get_application_navigation_keyboard()
-    )
-        await state.set_state(ApplicationStates.waiting_for_name))
+        await callback.message.edit_text(text, reply_markup=get_application_navigation_keyboard(), parse_mode="HTML")
+        await state.set_state(ApplicationStates.waiting_for_name)
         
     elif unfinished.current_step == "country":
-        progress = get_progress_bar(2)
+            progress = get_progress_bar(2)
         text = f"<b>Шаг 2 из 4</b> {progress}\n\n"
         text += f"С возвращением, {data.get('name', '')}! "
         text += MESSAGES['ask_country']
         await callback.message.edit_text(text, parse_mode="HTML")
-    
-    # Добавляем кнопку Назад
-    await callback.message.answer(
-        "Используйте кнопку ниже для возврата в меню:",
-        reply_markup=get_application_navigation_keyboard()
-    )
         await state.set_state(ApplicationStates.waiting_for_country)
         
     elif unfinished.current_step == "phone":
