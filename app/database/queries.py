@@ -4,7 +4,7 @@
 import json
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Application, UnfinishedApplication, Review, async_session, Referral
+from app.database.models import Application, UnfinishedApplication, Review, async_session, Referral, Buyer, PostbackLog
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -247,3 +247,40 @@ async def get_referrer_by_user_id(user_id: int) -> Optional[int]:
             )
         )
         return result.scalar_one_or_none()
+
+
+# === ФУНКЦИИ ДЛЯ РАБОТЫ С БАЙЕРАМИ ===
+
+async def get_buyer_by_code(buyer_code: str) -> Optional[Buyer]:
+    """Получить байера по коду"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Buyer).where(Buyer.buyer_code == buyer_code)
+        )
+        return result.scalar_one_or_none()
+
+
+async def increment_buyer_stats(buyer_code: str):
+    """Увеличить счетчик лидов байера"""
+    async with async_session() as session:
+        buyer = await session.execute(
+            select(Buyer).where(Buyer.buyer_code == buyer_code)
+        )
+        buyer = buyer.scalar_one_or_none()
+        if buyer:
+            buyer.total_leads += 1
+            await session.commit()
+
+
+async def log_postback(buyer_id: int, application_id: int, status: str, response_code: int = None, response_text: str = None):
+    """Логировать отправку postback"""
+    async with async_session() as session:
+        log = PostbackLog(
+            buyer_id=buyer_id,
+            application_id=application_id,
+            status=status,
+            response_code=response_code,
+            response_text=response_text
+        )
+        session.add(log)
+        await session.commit()
