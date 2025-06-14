@@ -2,7 +2,7 @@
 Модели базы данных
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,6 +27,38 @@ class Application(Base):
     
     def __repr__(self):
         return f"<Application({self.name}, {self.phone})>"
+
+
+class UnfinishedApplication(Base):
+    """Модель незавершенной заявки"""
+    __tablename__ = 'unfinished_applications'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, unique=True, nullable=False)
+    username = Column(String(100), nullable=True)
+    current_step = Column(String(50), nullable=False)  # Текущий шаг
+    data = Column(Text, nullable=True)  # JSON с введенными данными
+    created_at = Column(DateTime, default=datetime.utcnow)
+    reminder_sent = Column(Boolean, default=False)  # Отправлено ли напоминание
+    
+    def __repr__(self):
+        return f"<UnfinishedApplication({self.user_id}, {self.current_step})>"
+
+
+class Review(Base):
+    """Модель отзывов"""
+    __tablename__ = 'reviews'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    country = Column(String(100), nullable=False)
+    text = Column(Text, nullable=False)
+    profit = Column(String(50), nullable=True)  # Заработок
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<Review({self.name}, {self.country})>"
 
 
 # Создаём движок базы данных
