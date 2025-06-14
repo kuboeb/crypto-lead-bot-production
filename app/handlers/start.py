@@ -5,7 +5,7 @@ from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from app.keyboards.main import get_main_keyboard
+from app.keyboards import get_start_keyboard
 from app.database.models import async_session, User
 from sqlalchemy import select
 
@@ -35,8 +35,10 @@ async def start_command(message: types.Message, state: FSMContext):
                 )
                 session.add(user)
                 await session.commit()
+                print(f"✅ Создан новый пользователь: {user.user_id}")
             except Exception as e:
-                print(f"Error creating user: {e}")
+                print(f"❌ Ошибка создания пользователя: {e}")
+                await session.rollback()
     
     # Отправляем приветствие
     await message.answer(
@@ -47,7 +49,7 @@ async def start_command(message: types.Message, state: FSMContext):
         "• Узнать о программе курса\n"
         "• Прочитать отзывы выпускников\n\n"
         "Выберите интересующий раздел:",
-        reply_markup=get_main_keyboard()
+        reply_markup=get_start_keyboard()
     )
 
 
@@ -57,5 +59,5 @@ async def main_menu(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer(
         "🏠 Вы в главном меню.\nВыберите интересующий раздел:",
-        reply_markup=get_main_keyboard()
+        reply_markup=get_start_keyboard()
     )

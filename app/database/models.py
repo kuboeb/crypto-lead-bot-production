@@ -266,3 +266,20 @@ class BuyerPixelConfig(Base):
 
 # Добавляем связь в модель Buyer
 Buyer.pixel_config = relationship("BuyerPixelConfig", back_populates="buyer", uselist=False)
+
+
+class User(Base):
+    """Модель пользователя бота"""
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, unique=True, nullable=False)
+    username = Column(String(100))
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_active = Column(DateTime, default=datetime.utcnow)
+    is_blocked = Column(Boolean, default=False)
+    
+    def __repr__(self):
+        return f"<User({self.user_id}, {self.username})>"
