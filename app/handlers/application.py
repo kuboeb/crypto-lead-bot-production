@@ -16,8 +16,8 @@ from app.keyboards.user import (
     get_contact_time_keyboard,
     get_cancel_keyboard,
     get_success_keyboard,
-    get_application_navigation_keyboard,
-    get_after_application_keyboard
+    get_after_application_keyboard,
+    get_application_navigation_keyboard
 )
 from app.database.queries import (
     create_application, 
@@ -64,15 +64,6 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
         await callback.answer("✅ Вы уже записаны на курс! Ожидайте звонка от наставника.")
         return
     
-    # Проверяем, нет ли уже заявки
-    if await user_has_application(callback.from_user.id):
-        await callback.message.edit_text(
-            MESSAGES['already_applied'],
-            parse_mode="HTML"
-        )
-        await callback.answer("У вас уже есть заявка!")
-        return
-    
     # Добавляем социальное доказательство
     social_proof = get_social_proof()
     progress = get_progress_bar(1)
@@ -82,7 +73,11 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
     text += MESSAGES['ask_name']
     text += f"\n\n<i>{social_proof}</i>"
     
-    await callback.message.edit_text(text, reply_markup=get_application_navigation_keyboard(), parse_mode="HTML")
+    await callback.message.edit_text(
+        text, 
+        reply_markup=get_application_navigation_keyboard(),
+        parse_mode="HTML"
+    )
     await state.set_state(ApplicationStates.waiting_for_name)
     
     # Сохраняем начало заполнения
@@ -342,11 +337,15 @@ async def continue_application(callback: CallbackQuery, state: FSMContext):
         progress = get_progress_bar(1)
         text = f"<b>Шаг 1 из 4</b> {progress}\n\n"
         text += MESSAGES['ask_name']
-        await callback.message.edit_text(text, reply_markup=get_application_navigation_keyboard(), parse_mode="HTML")
+        await callback.message.edit_text(
+            text, 
+            reply_markup=get_application_navigation_keyboard(),
+            parse_mode="HTML"
+        )
         await state.set_state(ApplicationStates.waiting_for_name)
         
     elif unfinished.current_step == "country":
-            progress = get_progress_bar(2)
+        progress = get_progress_bar(2)
         text = f"<b>Шаг 2 из 4</b> {progress}\n\n"
         text += f"С возвращением, {data.get('name', '')}! "
         text += MESSAGES['ask_country']
