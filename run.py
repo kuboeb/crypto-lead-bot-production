@@ -15,6 +15,7 @@ from aiogram.enums import ParseMode
 from app.config import BOT_TOKEN
 from app.handlers import register_all_handlers
 from app.database.models import init_db
+from app.utils.reminders import reminder_task
 
 # Настройка логирования
 logging.basicConfig(
@@ -46,6 +47,10 @@ async def main():
     
     # Регистрируем обработчики
     register_all_handlers(dp)
+    
+    # Запускаем фоновую задачу напоминаний
+    asyncio.create_task(reminder_task(bot))
+    logger.info("Система напоминаний запущена")
     
     # Запускаем бота
     try:
