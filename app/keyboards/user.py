@@ -19,6 +19,10 @@ def get_start_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text="📚 Подробнее о курсе",
             callback_data="course_info"
+        ),
+        InlineKeyboardButton(
+            text="💬 Отзывы",
+            callback_data="show_reviews"
         )
     )
     return builder.as_markup()
@@ -35,8 +39,8 @@ def get_after_application_keyboard() -> InlineKeyboardMarkup:
     )
     builder.row(
         InlineKeyboardButton(
-            text="📞 Связаться с менеджером",
-            url="https://t.me/your_manager"  # Замени на реальную ссылку
+            text="💬 Отзывы выпускников",
+            callback_data="show_reviews"
         )
     )
     return builder.as_markup()
@@ -105,6 +109,12 @@ def get_success_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text="📚 Подробнее о курсе",
             callback_data="course_info"
+        )
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text="💬 Отзывы выпускников",
+            callback_data="show_reviews"
         )
     )
     builder.row(

@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.config import MESSAGES
 from app.keyboards.user import get_start_keyboard, get_back_to_start_keyboard, get_after_application_keyboard
-from app.database.queries import user_has_application
+from app.database.queries import user_has_application, get_random_reviews
 
 router = Router(name="start")
 
@@ -63,6 +63,30 @@ async def show_course_info(callback: CallbackQuery):
     """Показать информацию о курсе"""
     await callback.message.edit_text(
         MESSAGES['info'],
+        reply_markup=get_back_to_start_keyboard(),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "show_reviews")
+async def show_reviews(callback: CallbackQuery):
+    """Показать отзывы"""
+    # Получаем 3 случайных отзыва
+    reviews = await get_random_reviews(limit=3)
+    
+    text = "<b>💬 Отзывы наших выпускников:</b>\n\n"
+    
+    for review in reviews:
+        text += f"<b>{review.name}</b> ({review.country})"
+        if review.profit:
+            text += f" - <i>{review.profit}</i>"
+        text += f"\n{review.text}\n\n"
+    
+    text += "<i>Это лишь малая часть отзывов. Присоединяйтесь к успешным выпускникам!</i>"
+    
+    await callback.message.edit_text(
+        text,
         reply_markup=get_back_to_start_keyboard(),
         parse_mode="HTML"
     )
