@@ -1,7 +1,7 @@
 """
 Модуль базы данных
 """
-from .models import init_db, Application, UnfinishedApplication, Review
+from .models import init_db, Application, UnfinishedApplication, Review, Referral
 from .queries import (
     create_application,
     get_application_by_user_id,
@@ -15,7 +15,10 @@ from .queries import (
     get_recent_applications_count,
     get_recent_applications,
     get_random_reviews,
-    add_review
+    add_review,
+    save_referral,
+    get_user_referrals_count,
+    get_referrer_by_user_id
 )
 
 __all__ = [
@@ -35,5 +38,9 @@ __all__ = [
     'get_recent_applications_count',
     'get_recent_applications',
     'get_random_reviews',
-    'add_review'
+    'add_review',
+    'save_referral',
+    'get_user_referrals_count',
+    'get_referrer_by_user_id',
+    'Referral'
 ]
