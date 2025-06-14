@@ -15,7 +15,8 @@ async def create_application(
     name: str,
     country: str,
     phone: str,
-    contact_time: str
+    contact_time: str,
+    referred_by: Optional[int] = None
 ) -> Application:
     """Создать новую заявку"""
     async with async_session() as session:
@@ -26,7 +27,8 @@ async def create_application(
             country=country,
             phone=phone,
             contact_time=contact_time,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
+            referred_by=referred_by
         )
         session.add(application)
         
@@ -40,6 +42,15 @@ async def create_application(
         
         await session.commit()
         await session.refresh(application)
+        
+        # Если есть реферер, сохраняем связь
+        if referred_by:
+            referral = Referral(
+                referrer_id=referred_by,
+                referred_id=user_id
+            )
+            session.add(referral)
+            await session.commit()
         return application
 
 
