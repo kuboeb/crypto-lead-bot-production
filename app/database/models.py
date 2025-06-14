@@ -208,3 +208,59 @@ class FunnelSnapshot(Base):
     drop_after_country = Column(Float, default=0)
     drop_after_phone = Column(Float, default=0)
     drop_after_time = Column(Float, default=0)
+
+
+class BuyerPixelConfig(Base):
+    """Конфигурация пикселей и постбэков для байера"""
+    __tablename__ = 'buyer_pixel_configs'
+    
+    id = Column(Integer, primary_key=True)
+    buyer_id = Column(Integer, ForeignKey('buyers.id'))
+    
+    # Facebook CAPI
+    fb_pixel_id = Column(String(100), nullable=True)
+    fb_access_token = Column(Text, nullable=True)
+    fb_test_event_code = Column(String(50), nullable=True)
+    
+    # Google Ads
+    google_conversion_id = Column(String(100), nullable=True)
+    google_conversion_label = Column(String(100), nullable=True)
+    google_api_version = Column(String(20), default='v13')
+    
+    # Telegram Ads
+    telegram_token = Column(Text, nullable=True)
+    
+    # PropellerAds
+    propeller_auth_token = Column(Text, nullable=True)
+    propeller_offer_id = Column(String(100), nullable=True)
+    
+    # RichAds
+    richads_campaign_id = Column(String(100), nullable=True)
+    richads_auth_token = Column(Text, nullable=True)
+    
+    # EvaDav
+    evadav_campaign_id = Column(String(100), nullable=True)
+    evadav_postback_url = Column(Text, nullable=True)
+    
+    # PushHouse
+    pushhouse_source_id = Column(String(100), nullable=True)
+    pushhouse_external_id = Column(String(100), nullable=True)
+    
+    # OnClick
+    onclick_campaign_uuid = Column(String(100), nullable=True)
+    onclick_source_id = Column(String(100), nullable=True)
+    
+    # Общие настройки
+    send_test_events = Column(Boolean, default=True)
+    retry_failed = Column(Boolean, default=True)
+    max_retries = Column(Integer, default=3)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Связь с байером
+    buyer = relationship("Buyer", back_populates="pixel_config", uselist=False)
+
+
+# Добавляем связь в модель Buyer
+Buyer.pixel_config = relationship("BuyerPixelConfig", back_populates="buyer", uselist=False)
