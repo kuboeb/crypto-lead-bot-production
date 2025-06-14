@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 from app.config import MESSAGES
 from app.keyboards.user import get_start_keyboard, get_back_to_start_keyboard, get_after_application_keyboard
-from app.database.queries import user_has_application, get_random_reviews
+from app.database.queries import user_has_application, get_random_reviews, get_buyer_by_code, increment_buyer_stats
 from app.handlers.referral import process_referral_link
 
 router = Router(name="start")
@@ -22,12 +22,35 @@ async def cmd_start(message: Message, state: FSMContext):
     
     # Проверяем, есть ли реферальная ссылка
     args = message.text.split()
-    if len(args) > 1 and args[1].startswith("ref_"):
+    if len(args) > 1:
+        # Проверяем реферальную ссылку
+        if args[1].startswith("ref_"):
         try:
             referrer_id = int(args[1].split("_")[1])
             await process_referral_link(message, state, referrer_id)
         except (ValueError, IndexError):
             pass
+        # Проверяем ссылку байера
+        elif args[1].startswith("buyer_"):
+            try:
+                # Парсим параметры байера
+                parts = args[1].split('_', 3)
+                if len(parts) >= 3:
+                    buyer_code = f"{parts[0]}_{parts[1]}_{parts[2]}"
+                    
+                    # Проверяем существует ли байер
+                    buyer = await get_buyer_by_code(buyer_code)
+                    if buyer:
+                        # Увеличиваем счетчик переходов
+                        await increment_buyer_stats(buyer_code)
+                        
+                        # Сохраняем в состоянии для последующего использования
+                        await state.update_data(
+                            buyer_code=buyer_code,
+                            utm_params=parts[3] if len(parts) > 3 else None
+                        )
+            except Exception as e:
+                print(f"Ошибка обработки байерской ссылки: {e}")
     
     # Проверяем, есть ли уже заявка от пользователя
     if await user_has_application(message.from_user.id):
