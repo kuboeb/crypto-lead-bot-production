@@ -17,7 +17,6 @@ from app.keyboards.user import (
     get_cancel_keyboard,
     get_success_keyboard,
     get_after_application_keyboard
-    get_after_application_keyboard
 )
 from app.database.queries import (
     create_application, 
@@ -57,7 +56,7 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
     # Проверяем, нет ли уже заявки
     if await user_has_application(callback.from_user.id):
         await callback.message.edit_text(
-            MESSAGES[\'already_applied\'],
+            MESSAGES['already_applied'],
             reply_markup=get_after_application_keyboard(),
             parse_mode="HTML"
         )
