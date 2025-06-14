@@ -4,7 +4,7 @@
 import json
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.models import Application, UnfinishedApplication, Review, async_session
+from app.database.models import Application, UnfinishedApplication, Review, async_session, Referral
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -202,3 +202,37 @@ async def get_unprocessed_applications() -> List[Application]:
             .order_by(Application.created_at.desc())
         )
         return result.scalars().all()
+
+
+async def save_referral(referrer_id: int, referred_id: int):
+    """Сохранить реферальную связь"""
+    async with async_session() as session:
+        referral = Referral(
+            referrer_id=referrer_id,
+            referred_id=referred_id
+        )
+        session.add(referral)
+        await session.commit()
+        return referral
+
+
+async def get_user_referrals_count(user_id: int) -> int:
+    """Получить количество приглашенных пользователей"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(func.count(Referral.id)).where(
+                Referral.referrer_id == user_id
+            )
+        )
+        return result.scalar() or 0
+
+
+async def get_referrer_by_user_id(user_id: int) -> Optional[int]:
+    """Получить ID пригласившего по ID пользователя"""
+    async with async_session() as session:
+        result = await session.execute(
+            select(Application.referred_by).where(
+                Application.user_id == user_id
+            )
+        )
+        return result.scalar_one_or_none()
