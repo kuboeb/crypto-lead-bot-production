@@ -1,7 +1,7 @@
 """
 Обработчик реферальной системы
 """
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import CommandStart
@@ -54,15 +54,18 @@ def get_share_keyboard(referral_link: str, share_text: str) -> InlineKeyboardMar
 
 
 @router.callback_query(F.data == "show_referral_program")
-async def show_referral_program(callback: CallbackQuery):
+async def show_referral_program(callback: CallbackQuery, bot: Bot):
     """Показать реферальную программу"""
     # Проверяем, есть ли у пользователя заявка
     if not await user_has_application(callback.from_user.id):
         await callback.answer("Сначала нужно записаться на курс!", show_alert=True)
         return
     
+    # Получаем информацию о боте
+    bot_info = await bot.get_me()
+    bot_username = bot_info.username
+    
     # Генерируем реферальную ссылку
-    bot_username = callback.bot.username
     referral_link = generate_referral_link(callback.from_user.id, bot_username)
     
     # Получаем количество приглашенных
