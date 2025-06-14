@@ -15,7 +15,8 @@ from app.keyboards.user import (
     get_phone_keyboard, 
     get_contact_time_keyboard,
     get_cancel_keyboard,
-    get_success_keyboard, get_after_application_keyboard
+    get_success_keyboard,
+    get_after_application_keyboard
 )
 from app.database.queries import (
     create_application, 
@@ -52,6 +53,16 @@ def get_social_proof() -> str:
 @router.callback_query(F.data == "start_application")
 async def start_application(callback: CallbackQuery, state: FSMContext):
     """Начало процесса заявки"""
+    # Проверяем, нет ли уже заявки
+    if await user_has_application(callback.from_user.id):
+        await callback.message.edit_text(
+            MESSAGES[\'already_applied\'],
+            reply_markup=get_after_application_keyboard(),
+            parse_mode="HTML"
+        )
+        await callback.answer("✅ Вы уже записаны на курс! Ожидайте звонка от наставника.")
+        return
+    
     # Проверяем, нет ли уже заявки
     if await user_has_application(callback.from_user.id):
         await callback.message.edit_text(
@@ -263,7 +274,8 @@ async def process_contact_time(callback: CallbackQuery, state: FSMContext, bot: 
         await callback.message.edit_text(
             MESSAGES['success'],
             parse_mode="HTML",
-            reply_markup=get_success_keyboard, get_after_application_keyboard()
+            reply_markup=get_success_keyboard,
+    get_after_application_keyboard()
         )
         
         # Отправляем уведомление админу
