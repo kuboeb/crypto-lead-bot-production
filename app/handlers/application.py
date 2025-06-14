@@ -2,6 +2,7 @@
 Обработчик процесса подачи заявки
 """
 import re
+import json
 from datetime import datetime
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
@@ -16,9 +17,36 @@ from app.keyboards.user import (
     get_cancel_keyboard,
     get_success_keyboard
 )
-from app.database.queries import create_application, user_has_application
+from app.database.queries import (
+    create_application, 
+    user_has_application,
+    save_unfinished_application,
+    get_recent_applications_count,
+    get_recent_applications
+)
 
 router = Router(name="application")
+
+
+def get_progress_bar(current_step: int, total_steps: int = 4) -> str:
+    """Генерирует прогресс-бар"""
+    filled = "▓" * current_step
+    empty = "░" * (total_steps - current_step)
+    percentage = (current_step / total_steps) * 100
+    return f"{filled}{empty} {percentage:.0f}%"
+
+
+def get_social_proof() -> str:
+    """Генерирует социальное доказательство"""
+    import random
+    messages = [
+        "💫 За последний час записалось 7 человек",
+        "🔥 Осталось 12 мест в группе",
+        "⚡ Михаил из Германии только что записался",
+        "🎯 Уже 89 человек проходят обучение",
+        "✨ Анна из Франции начала зарабатывать 1500€/мес"
+    ]
+    return random.choice(messages)
 
 
 @router.callback_query(F.data == "start_application")
@@ -33,12 +61,26 @@ async def start_application(callback: CallbackQuery, state: FSMContext):
         await callback.answer("У вас уже есть заявка!")
         return
     
+    # Добавляем социальное доказательство
+    social_proof = get_social_proof()
+    progress = get_progress_bar(1)
+    
     # Запрашиваем имя
-    await callback.message.edit_text(
-        MESSAGES['ask_name'],
-        parse_mode="HTML"
-    )
+    text = f"<b>Шаг 1 из 4</b> {progress}\n\n"
+    text += MESSAGES['ask_name']
+    text += f"\n\n<i>{social_proof}</i>"
+    
+    await callback.message.edit_text(text, parse_mode="HTML")
     await state.set_state(ApplicationStates.waiting_for_name)
+    
+    # Сохраняем начало заполнения
+    await save_unfinished_application(
+        user_id=callback.from_user.id,
+        username=callback.from_user.username,
+        current_step="name",
+        data={}
+    )
+    
     await callback.answer()
 
 
@@ -59,12 +101,34 @@ async def process_name(message: Message, state: FSMContext):
     # Сохраняем имя
     await state.update_data(name=name)
     
-    # Запрашиваем страну
+    # Обновляем прогресс
+    progress = get_progress_bar(2)
+    
+    # Персонализированное обращение
+    text = f"<b>Шаг 2 из 4</b> {progress}\n\n"
+    text += f"Отлично, {name}! "
+    text += MESSAGES['ask_country']
+    
+    # Показываем недавние заявки
+    recent_count = await get_recent_applications_count(hours=1)
+    if recent_count > 0:
+        text += f"\n\n<i>💡 За последний час к нам присоединилось {recent_count} человек(а)</i>"
+    
     await message.answer(
-        MESSAGES['ask_country'],
+        text,
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard()
     )
+    
+    # Сохраняем прогресс
+    data = await state.get_data()
+    await save_unfinished_application(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        current_step="country",
+        data=data
+    )
+    
     await state.set_state(ApplicationStates.waiting_for_country)
 
 
@@ -84,13 +148,36 @@ async def process_country(message: Message, state: FSMContext):
     
     # Сохраняем страну
     await state.update_data(country=country)
+    data = await state.get_data()
     
-    # Запрашиваем телефон
+    # Обновляем прогресс
+    progress = get_progress_bar(3)
+    
+    text = f"<b>Шаг 3 из 4</b> {progress}\n\n"
+    text += f"Супер, {data['name']}! "
+    text += MESSAGES['ask_phone']
+    
+    # Показываем последнюю заявку из этой страны
+    recent_apps = await get_recent_applications(limit=10)
+    for app in recent_apps:
+        if app.country.lower() == country.lower():
+            text += f"\n\n<i>🌍 Кстати, из {country} недавно записался {app.name}</i>"
+            break
+    
     await message.answer(
-        MESSAGES['ask_phone'],
+        text,
         parse_mode="HTML",
         reply_markup=get_phone_keyboard()
     )
+    
+    # Сохраняем прогресс
+    await save_unfinished_application(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        current_step="phone",
+        data=data
+    )
+    
     await state.set_state(ApplicationStates.waiting_for_phone)
 
 
@@ -118,13 +205,30 @@ async def process_phone(message: Message, state: FSMContext):
     
     # Сохраняем телефон
     await state.update_data(phone=phone)
+    data = await state.get_data()
     
-    # Запрашиваем время
+    # Обновляем прогресс
+    progress = get_progress_bar(4)
+    
+    text = f"<b>Последний шаг!</b> {progress}\n\n"
+    text += f"Отлично, {data['name']}! "
+    text += MESSAGES['ask_time']
+    text += "\n\n<i>🎯 После выбора времени ваше место будет забронировано!</i>"
+    
     await message.answer(
-        MESSAGES['ask_time'],
+        text,
         parse_mode="HTML",
         reply_markup=get_contact_time_keyboard()
     )
+    
+    # Сохраняем прогресс
+    await save_unfinished_application(
+        user_id=message.from_user.id,
+        username=message.from_user.username,
+        current_step="contact_time",
+        data=data
+    )
+    
     await state.set_state(ApplicationStates.waiting_for_contact_time)
 
 
