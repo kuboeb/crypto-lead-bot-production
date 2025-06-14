@@ -160,3 +160,51 @@ class AdminUser(Base):
     def __repr__(self):
         return f"<AdminUser({self.username}, {self.role})>"
 
+
+
+class UserAction(Base):
+    """Модель для отслеживания действий пользователей"""
+    __tablename__ = 'user_actions'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, nullable=False)
+    action_type = Column(String(50), nullable=False)  # start, menu_view, button_click, etc
+    action_value = Column(String(200), nullable=True)  # какая кнопка, какое меню и т.д.
+    step_name = Column(String(100), nullable=True)  # название шага воронки
+    session_id = Column(String(100), nullable=True)  # для группировки действий в сессии
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Дополнительные поля для аналитики
+    time_since_start = Column(Integer, nullable=True)  # секунды от начала сессии
+    previous_action = Column(String(50), nullable=True)
+    device_info = Column(String(200), nullable=True)
+
+
+class FunnelSnapshot(Base):
+    """Снимки воронки для быстрой загрузки"""
+    __tablename__ = 'funnel_snapshots'
+    
+    id = Column(Integer, primary_key=True)
+    snapshot_time = Column(DateTime, default=datetime.utcnow)
+    total_users = Column(Integer, default=0)
+    
+    # Детальные шаги воронки
+    step_start = Column(Integer, default=0)
+    step_menu_opened = Column(Integer, default=0)
+    step_apply_clicked = Column(Integer, default=0)
+    step_form_started = Column(Integer, default=0)
+    step_name_entered = Column(Integer, default=0)
+    step_country_entered = Column(Integer, default=0)
+    step_phone_entered = Column(Integer, default=0)
+    step_time_selected = Column(Integer, default=0)
+    step_completed = Column(Integer, default=0)
+    
+    # Процент отвала на каждом шаге
+    drop_after_start = Column(Float, default=0)
+    drop_after_menu = Column(Float, default=0)
+    drop_after_apply = Column(Float, default=0)
+    drop_after_form_start = Column(Float, default=0)
+    drop_after_name = Column(Float, default=0)
+    drop_after_country = Column(Float, default=0)
+    drop_after_phone = Column(Float, default=0)
+    drop_after_time = Column(Float, default=0)
